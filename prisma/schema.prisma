@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DegreeLevel {
+  BACHELOR
+  MASTER
+  PHD
+}
+
+enum SemesterTerm {
+  SPRING
+  SUMMER
+  FALL
+}
+
+enum SectionStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum PaymentProvider {
+  STRIPE
+  BKASH
+  SSLCOMMERZ
+}
+
+enum PaymentType {
+  TUITION_FEE
+  TRANSCRIPT_FEE
+  SEMESTER_FEE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  role      Role       @default(STUDENT)
+  status    UserStatus @default(ACTIVE)
+  phone     String?
+  address   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+
+  studentRegistrations CourseRegistration[] @relation("StudentRegistrations")
+  taughtSections       Section[]            @relation("InstructorSections")
+  givenGrades          Grade[]              @relation("GraderInstructor")
+  studentGrades        Grade[]              @relation("StudentGrades")
+  attendances          Attendance[]         @relation("StudentAttendance")
+  payments             Payment[]            @relation("StudentPayments")
+  semesterGpas         SemesterGPA[]        @relation("StudentGpas")
+  auditLogs            AuditLog[]           @relation("UserAuditLogs")
+
+  @@index([role])
+  @@index([email])
+}
+
+model Department {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  programs Program[]
+  courses  Course[]
+}
+
+model Program {
+  id           Int         @id @default(autoincrement())
+  code         String      @unique
+  name         String
+  degreeLevel  DegreeLevel @default(BACHELOR)
+  totalCredits Int         @default(120)
+  departmentId Int
+  department   Department  @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+}
+
+model Course {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique
+  title          String
+  credits        Float     @default(3.0)
+  departmentId   Int
+  department     Department @relation(fields: [departmentId], references: [id])
+  prerequisiteId Int?
+  prerequisite   Course?   @relation("CoursePrerequisite", fields: [prerequisiteId], references: [id])
+  prerequisites  Course[]  @relation("CoursePrerequisite")
+  description    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  sections Section[]
+  grades   Grade[]
+
+  @@index([code])
+  @@index([departmentId])
+}
+
+model Semester {
+  id                 Int          @id @default(autoincrement())
+  name               String
+  year               Int
+  term               SemesterTerm
+  startDate          DateTime
+  endDate            DateTime
+  isRegistrationOpen Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+
+  sections      Section[]
+  registrations CourseRegistration[]
+  semesterGpas  SemesterGPA[]
+}
+
+model Section {
+  id            Int           @id @default(autoincrement())
+  sectionNumber String
+  courseId      Int
+  course        Course        @relation(fields: [courseId], references: [id])
+  semesterId    Int
+  semester      Semester      @relation(fields: [semesterId], references: [id])
+  instructorId  Int
+  instructor    User          @relation("InstructorSections", fields: [instructorId], references: [id])
+  capacity      Int           @default(30)
+  enrolledCount Int           @default(0)
+  classRoutine  String
+  room          String
+  status        SectionStatus @default(OPEN)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  registrations CourseRegistration[]
+  attendances   Attendance[]
+  grades        Grade[]
+
+  @@index([courseId, semesterId])
+}
+
+model CourseRegistration {
+  id           Int                @id @default(autoincrement())
+  studentId    Int
+  student      User               @relation("StudentRegistrations", fields: [studentId], references: [id])
+  sectionId    Int
+  section      Section            @relation(fields: [sectionId], references: [id])
+  semesterId   Int
+  semester     Semester           @relation(fields: [semesterId], references: [id])
+  status       RegistrationStatus @default(ENROLLED)
+  registeredAt DateTime           @default(now())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([studentId, sectionId])
+  @@index([studentId])
+  @@index([sectionId])
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  sectionId Int
+  section   Section          @relation(fields: [sectionId], references: [id])
+  studentId Int
+  student   User             @relation("StudentAttendance", fields: [studentId], references: [id])
+  date      DateTime
+  status    AttendanceStatus @default(PRESENT)
+  remarks   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([sectionId, studentId])
+}
+
+model Grade {
+  id            Int       @id @default(autoincrement())
+  studentId     Int
+  student       User      @relation("StudentGrades", fields: [studentId], references: [id])
+  sectionId     Int
+  section       Section   @relation(fields: [sectionId], references: [id])
+  courseId      Int
+  course        Course    @relation(fields: [courseId], references: [id])
+  submittedById Int
+  submittedBy   User      @relation("GraderInstructor", fields: [submittedById], references: [id])
+  marks         Float?
+  letterGrade   String
+  gradePoint    Float
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([studentId, sectionId])
+  @@index([studentId])
+}
+
+model SemesterGPA {
+  id            Int      @id @default(autoincrement())
+  studentId     Int
+  student       User     @relation("StudentGpas", fields: [studentId], references: [id])
+  semesterId    Int
+  semester      Semester @relation(fields: [semesterId], references: [id])
+  totalCredits  Float
+  earnedCredits Float
+  gpa           Float
+  cgpa          Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([studentId, semesterId])
+}
+
+model Payment {
+  id            Int             @id @default(autoincrement())
+  studentId     Int
+  student       User            @relation("StudentPayments", fields: [studentId], references: [id])
+  amount        Float
+  currency      String          @default("BDT")
+  transactionId String          @unique
+  provider      PaymentProvider @default(STRIPE)
+  type          PaymentType     @default(TUITION_FEE)
+  status        PaymentStatus   @default(PENDING)
+  metadata      String?
+  paidAt        DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([studentId])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation("UserAuditLogs", fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

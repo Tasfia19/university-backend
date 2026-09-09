@@ -1,0 +1,553 @@
+{
+  "info": {
+    "_postman_id": "univ-mgmt-system-api-v1-collection",
+    "name": "University Management System API",
+    "description": "Comprehensive REST API Postman Collection. Login as any role updates {{token}} automatically so Get Profile (Me) shows the logged-in user's info, and Dashboard Statistics returns 403 Forbidden for non-Admin roles.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "instructorToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. System Health Check",
+      "item": [
+        {
+          "name": "Get API Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:5000/", "protocol": "http", "host": ["localhost"], "port": "5000", "path": [""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Auth & Profiles (Role Logins)",
+      "item": [
+        {
+          "name": "1. Login as ADMIN (Sets current token to Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+                  "    console.log('✅ Logged in as Admin:', jsonData.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@university.edu\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "2. Login as INSTRUCTOR (Sets current token to Instructor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('instructorToken', jsonData.data.token);",
+                  "    console.log('✅ Logged in as Instructor:', jsonData.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dr.smith@university.edu\",\n  \"password\": \"instructor123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "3. Login as STUDENT (Sets current token to Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('studentToken', jsonData.data.token);",
+                  "    console.log('✅ Logged in as Student:', jsonData.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student1@university.edu\",\n  \"password\": \"student123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me - Shows info of whichever user logged in last)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Register New Student Account",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newstudent@university.edu\",\n  \"password\": \"student123\",\n  \"name\": \"New Student\",\n  \"role\": \"STUDENT\",\n  \"phone\": \"+8801700112233\",\n  \"address\": \"Dhaka, Bangladesh\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Profile Name\",\n  \"phone\": \"+8801811998877\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth", "profile"] }
+          }
+        },
+        {
+          "name": "Logout (Clears Session)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Departments",
+      "item": [
+        {
+          "name": "Create Department (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"BBA\",\n  \"name\": \"Business Administration\",\n  \"description\": \"Department of Business, Finance & Accounting\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/departments", "host": ["{{baseUrl}}"], "path": ["departments"] }
+          }
+        },
+        {
+          "name": "Get Departments (Pagination & Search)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/departments?page=1&limit=10&q=Computer",
+              "host": ["{{baseUrl}}"],
+              "path": ["departments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "q", "value": "Computer" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Programs",
+      "item": [
+        {
+          "name": "Create Program (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"MSC-CSE\",\n  \"name\": \"M.Sc. in Computer Science\",\n  \"degreeLevel\": \"MASTER\",\n  \"totalCredits\": 36,\n  \"departmentId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/programs", "host": ["{{baseUrl}}"], "path": ["programs"] }
+          }
+        },
+        {
+          "name": "Get Programs (Filtering & Pagination)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/programs?departmentId=1&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["programs"],
+              "query": [
+                { "key": "departmentId", "value": "1" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Courses",
+      "item": [
+        {
+          "name": "Create Course with Prerequisite (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"CSE201\",\n  \"title\": \"Object Oriented Programming\",\n  \"credits\": 3.0,\n  \"departmentId\": 1,\n  \"prerequisiteId\": 1,\n  \"description\": \"Java, OOP paradigms, inheritance, and polymorphism\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/courses", "host": ["{{baseUrl}}"], "path": ["courses"] }
+          }
+        },
+        {
+          "name": "Get Courses (Search, Sorting & Pagination)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/courses?page=1&limit=10&sortBy=code&sortOrder=asc&q=CSE",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "code" },
+                { "key": "sortOrder", "value": "asc" },
+                { "key": "q", "value": "CSE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Course Details by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/courses/1", "host": ["{{baseUrl}}"], "path": ["courses", "1"] }
+          }
+        },
+        {
+          "name": "Soft Delete Course (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/courses/3", "host": ["{{baseUrl}}"], "path": ["courses", "3"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Semesters",
+      "item": [
+        {
+          "name": "Create Semester (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring 2027\",\n  \"year\": 2027,\n  \"term\": \"SPRING\",\n  \"startDate\": \"2027-01-10T00:00:00Z\",\n  \"endDate\": \"2027-05-30T00:00:00Z\",\n  \"isRegistrationOpen\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/semesters", "host": ["{{baseUrl}}"], "path": ["semesters"] }
+          }
+        },
+        {
+          "name": "Get Semesters List",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/semesters", "host": ["{{baseUrl}}"], "path": ["semesters"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Sections",
+      "item": [
+        {
+          "name": "Create Course Section (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionNumber\": \"02\",\n  \"courseId\": 1,\n  \"semesterId\": 1,\n  \"instructorId\": 2,\n  \"capacity\": 30,\n  \"classRoutine\": \"Tue/Thu 02:00-03:30 PM\",\n  \"room\": \"Academic Building Room 305\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sections", "host": ["{{baseUrl}}"], "path": ["sections"] }
+          }
+        },
+        {
+          "name": "Get Sections (Filter & Pagination)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/sections?semesterId=1&status=OPEN&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["sections"],
+              "query": [
+                { "key": "semesterId", "value": "1" },
+                { "key": "status", "value": "OPEN" },
+                { "key": "page", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Course Registrations",
+      "item": [
+        {
+          "name": "1. Test Prerequisite Failure (CSE102 without passing CSE101)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionId\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/registrations", "host": ["{{baseUrl}}"], "path": ["registrations"] }
+          }
+        },
+        {
+          "name": "2. Register for Section (CSE101 - Base Course)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/registrations", "host": ["{{baseUrl}}"], "path": ["registrations"] }
+          }
+        },
+        {
+          "name": "Get My Enrolled Schedule (Student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/registrations/my-schedule", "host": ["{{baseUrl}}"], "path": ["registrations", "my-schedule"] }
+          }
+        },
+        {
+          "name": "Drop Course Registration",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/registrations/1/drop", "host": ["{{baseUrl}}"], "path": ["registrations", "1", "drop"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Attendance",
+      "item": [
+        {
+          "name": "Record Attendance (Instructor Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{instructorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionId\": 1,\n  \"studentId\": 4,\n  \"date\": \"2026-09-10T09:30:00Z\",\n  \"status\": \"PRESENT\",\n  \"remarks\": \"Present and participated in lab\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/attendance", "host": ["{{baseUrl}}"], "path": ["attendance"] }
+          }
+        },
+        {
+          "name": "Get Section Attendance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{instructorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/attendance/section/1", "host": ["{{baseUrl}}"], "path": ["attendance", "section", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Grades & Academic Transcript",
+      "item": [
+        {
+          "name": "Submit Student Grade (Instructor Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{instructorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": 4,\n  \"sectionId\": 1,\n  \"marks\": 88\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/grades", "host": ["{{baseUrl}}"], "path": ["grades"] }
+          }
+        },
+        {
+          "name": "Get Academic Transcript (Student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/grades/transcript", "host": ["{{baseUrl}}"], "path": ["grades", "transcript"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Payments (Stripe Gateway)",
+      "item": [
+        {
+          "name": "Initiate Tuition Payment (Student Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15000,\n  \"provider\": \"STRIPE\",\n  \"type\": \"TUITION_FEE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/initiate", "host": ["{{baseUrl}}"], "path": ["payments", "initiate"] }
+          }
+        },
+        {
+          "name": "Payment Webhook Callback Simulation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TRX-1788986091570-6A42BF\",\n  \"status\": \"PAID\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/webhook", "host": ["{{baseUrl}}"], "path": ["payments", "webhook"] }
+          }
+        },
+        {
+          "name": "Get My Payment History (Student Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/payments/my-payments", "host": ["{{baseUrl}}"], "path": ["payments", "my-payments"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Admin Analytics & Security Audit",
+      "item": [
+        {
+          "name": "Get Dashboard Statistics (Uses {{token}} - 200 OK for Admin, 403 Forbidden for Instructor/Student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/dashboard-stats", "host": ["{{baseUrl}}"], "path": ["admin", "dashboard-stats"] }
+          }
+        },
+        {
+          "name": "Explicit Forbidden RBAC Test (Student Attempt -> 403 Forbidden)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/dashboard-stats", "host": ["{{baseUrl}}"], "path": ["admin", "dashboard-stats"] }
+          }
+        },
+        {
+          "name": "Get System Audit Logs (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "audit-logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
