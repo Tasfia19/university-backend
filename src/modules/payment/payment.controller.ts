@@ -137,3 +137,111 @@ export const getMyPayments = catchAsync(async (req: AuthenticatedRequest, res: R
     data: payments,
   });
 });
+
+export const getAllPayments = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const status = req.query.status as any;
+  const search = (req.query.q as string) || '';
+  const skip = (page - 1) * limit;
+
+  const whereClause: any = {};
+
+  if (status && ['PENDING', 'PAID', 'FAILED', 'CANCELLED'].includes(status)) {
+    whereClause.status = status;
+  }
+
+  if (search) {
+    whereClause.OR = [
+      { transactionId: { contains: search, mode: 'insensitive' } },
+      { student: { name: { contains: search, mode: 'insensitive' } } },
+      { student: { email: { contains: search, mode: 'insensitive' } } },
+    ];
+  }
+
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where: whereClause,
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.payment.count({ where: whereClause }),
+  ]);
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: 'All student payments fetched successfully',
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+    data: payments,
+  });
+});
+
+export const updatePaymentStatus = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || !['PENDING', 'PAID', 'FAILED', 'CANCELLED'].includes(status)) {
+    throw new AppError('Valid status is required: PENDING, PAID, FAILED, or CANCELLED', 400);
+  }
+
+  const paymentId = parseInt(id);
+  if (isNaN(paymentId)) {
+    throw new AppError('Invalid payment ID', 400);
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+  });
+
+  if (!payment) {
+    throw new AppError('Payment record not found', 404);
+  }
+
+  const updatedPayment = await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      status,
+      paidAt: status === 'PAID' ? new Date() : (status === 'PENDING' ? null : payment.paidAt),
+    },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  await createAuditLog({
+    userId: req.user?.id,
+    action: 'ADMIN_UPDATE_PAYMENT_STATUS',
+    entity: 'Payment',
+    entityId: payment.id,
+    details: `Admin changed payment ${payment.transactionId} status from ${payment.status} to ${status}`,
+    ipAddress: req.ip,
+  });
+
+  sendResponse(res, {
+    statusCode: 200,
+    message: `Payment status successfully updated to ${status}`,
+    data: updatedPayment,
+  });
+});

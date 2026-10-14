@@ -509,6 +509,29 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
             "url": { "raw": "{{baseUrl}}/payments/my-payments", "host": ["{{baseUrl}}"], "path": ["payments", "my-payments"] }
           }
+        },
+        {
+          "name": "Get All Student Payments (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/payments?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["payments"] }
+          }
+        },
+        {
+          "name": "Update Payment Status to PAID (Admin Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PAID\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/1/status", "host": ["{{baseUrl}}"], "path": ["payments", "1", "status"] }
+          }
         }
       ]
     },

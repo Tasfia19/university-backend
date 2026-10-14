@@ -6,10 +6,26 @@ import {
   initiatePayment,
   handlePaymentWebhook,
   getMyPayments,
+  getAllPayments,
+  updatePaymentStatus,
 } from './payment.controller';
 import { Role } from '@prisma/client';
 
 const router = Router();
+
+router.get(
+  '/',
+  protect,
+  restrictTo(Role.ADMIN),
+  getAllPayments
+);
+
+router.patch(
+  '/:id/status',
+  protect,
+  restrictTo(Role.ADMIN),
+  updatePaymentStatus
+);
 
 router.post(
   '/initiate',
